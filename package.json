@@ -5,7 +5,7 @@
   "homepage": "https://collana-solutions.github.io/javascript-utils",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/neolution-ch/javascript-utils"
+    "url": "git+https://github.com/collana-solutions/javascript-utils"
   },
   "license": "MIT",
   "author": "Neolution",
