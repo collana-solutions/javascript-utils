@@ -55,19 +55,17 @@ jobs:
             const { owner, repo } = context.repo;
             const run = context.payload.workflow_run;
 
-            // workflow_run lists the pull requests only for branches of this repository. For a
-            // fork, look the pull request up by its head branch, and accept it only if its head
-            // is still the commit that CI ran on.
-            let issue_number = run.pull_requests[0]?.number;
-            if (!issue_number) {
-              const { data: pulls } = await github.rest.pulls.list({
-                owner,
-                repo,
-                state: 'open',
-                head: `${run.head_repository.owner.login}:${run.head_branch}`,
-              });
-              issue_number = pulls.find((pr) => pr.head.sha === run.head_sha)?.number;
-            }
+            // Look the pull request up by its head branch, which also works for forks, where
+            // workflow_run lists no pull requests. Only an open pull request whose head is still
+            // the commit CI ran on gets the comment, so a run that finishes late never replaces
+            // the summary of a newer push.
+            const { data: pulls } = await github.rest.pulls.list({
+              owner,
+              repo,
+              state: 'open',
+              head: `${run.head_repository.owner.login}:${run.head_branch}`,
+            });
+            const issue_number = pulls.find((pr) => pr.head.sha === run.head_sha)?.number;
             if (!issue_number) {
               core.info(`No open pull request has ${run.head_sha} as its head, nothing to comment on.`);
               return;
