@@ -6,7 +6,7 @@ const config: Config.InitialOptions = {
   resetMocks: false,
   setupFiles: ["jest-localstorage-mock"],
   collectCoverage: true,
-  coverageReporters: ["text", "html", "cobertura"],
+  coverageReporters: ["text", "html", "json-summary"],
   coverageThreshold: {
     global: {
       branches: 100,

@@ -1,14 +1,14 @@
 {
-  "name": "@neolution-ch/javascript-utils",
+  "name": "@collana-solutions/javascript-utils",
   "version": "2.6.0",
   "description": "This is a collection of utilities that we have created to help with our development process.",
-  "homepage": "https://collana-solutions.github.io/javascript-utils",
+  "homepage": "https://github.com/collana-solutions/javascript-utils#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/collana-solutions/javascript-utils"
   },
   "license": "MIT",
-  "author": "Neolution",
+  "author": "collana solutions AG",
   "sideEffects": false,
   "exports": {
     "./package.json": "./package.json",
@@ -29,22 +29,27 @@
   "scripts": {
     "build": "rollup -c --configPlugin rollup-plugin-typescript2",
     "lint": "eslint --cache",
-    "prepack": "yarn build",
-    "prepare-pr": "yarn prettier . --write && yarn lint && yarn build && yarn test",
+    "prepack": "pnpm run build",
+    "prepare-pr": "pnpm exec prettier . --write && pnpm run lint && pnpm run build && pnpm run test",
     "prettier-check": "prettier --check .",
     "prettier-write": "prettier --write .",
     "start": "rollup -c -w",
-    "test": "cross-env TZ=Europe/Zurich yarn jest",
-    "start-all": "concurrently \"yarn start\" \"yarn start-yalc\"",
-    "start-yalc": "yarn nodemon --watch dist -x \"yarn yalc push\""
+    "test": "cross-env TZ=Europe/Zurich jest",
+    "start-all": "concurrently \"pnpm run start\" \"pnpm run start-yalc\"",
+    "start-yalc": "nodemon --watch dist -x \"yalc push\"",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish"
   },
   "dependencies": {
     "date-fns": "^2.30.0",
     "uuid": "^11.1.1"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^1.0.1",
+    "@changesets/cli": "^3.0.3",
+    "@jest/types": "^29.6.1",
     "@neolution-ch/eslint-config-neolution": "^2.1.0",
-    "@release-it/keep-a-changelog": "^4.0.0",
     "@rollup/plugin-commonjs": "^24.1.0",
     "@rollup/plugin-node-resolve": "^15.0.2",
     "@rollup/plugin-terser": "^0.4.1",
@@ -58,8 +63,8 @@
     "jest-localstorage-mock": "^2.4.26",
     "jiti": "^2.4.2",
     "nodemon": "^2.0.22",
+    "pkg-pr-new": "^0.0.93",
     "prettier": "^3.5.3",
-    "release-it": "^16.1.2",
     "rollup": "^3.21.4",
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "rollup-plugin-typescript2": "^0.34.1",
@@ -68,12 +73,12 @@
     "typescript": "^5.1.6",
     "yalc": "^1.0.0-pre.53"
   },
-  "peerDependencies": {},
   "engines": {
     "node": ">=18"
   },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
-  }
+  },
+  "packageManager": "pnpm@11.22.0"
 }
