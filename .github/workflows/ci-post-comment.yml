@@ -1,37 +1,90 @@
-﻿name: CI Post Comment
+name: CI Post Comment
+
+# Posts the coverage summary of a CI run on its pull request, as a comment that is updated in
+# place. A pull_request run from a fork gets a read-only token and cannot comment, so this
+# workflow runs on workflow_run in the context of the base repository. It checks out nothing and
+# runs no code from the pull request: it only reads the markdown file that the Verify job uploaded.
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types:
-      - completed
+  workflow_run: # zizmor: ignore[dangerous-triggers] no checkout, the artifact is only read as comment text
+    workflows: [CI]
+    types: [completed]
+
+permissions: {}
+
 jobs:
   post-comment:
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request' }}
+    name: Post coverage comment
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      # Lists and downloads the artifacts of the CI run.
+      actions: read
+      pull-requests: write
     steps:
-      - name: Download code-coverage-results
-        uses: actions/download-artifact@v4
+      # A draft pull request skips the Verify job, so its CI run has no coverage summary.
+      - name: Find coverage summary
+        id: find
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { data } = await github.rest.actions.listWorkflowRunArtifacts({
+              ...context.repo,
+              run_id: context.payload.workflow_run.id,
+              name: 'code-coverage-results',
+            });
+            core.setOutput('found', String(data.total_count > 0));
+
+      - name: Download coverage summary
+        if: steps.find.outputs.found == 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: code-coverage-results
+          path: ${{ runner.temp }}/coverage
           run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ github.token }}
 
-      - name: Get PR Number from GitHub API (for forks)
-        id: get_pr_number
-        run: |
-          if [[ "${{ github.event.workflow_run.head_repository.fork }}" == "true" ]]; then
-            echo "This is a forked repository."
-            pr_number=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/${{ github.repository }}/pulls?head=${{ github.event.workflow_run.head_repository.owner.login }}:${{ github.event.workflow_run.head_branch }}" \
-              | jq '.[0].number')
-            echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
-          else
-            echo "pr_number=${{ github.event.workflow_run.pull_requests[0].number }}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Add Coverage PR Comment
-        uses: marocchino/sticky-pull-request-comment@v2
+      - name: Comment coverage summary
+        if: steps.find.outputs.found == 'true'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          SUMMARY_FILE: ${{ runner.temp }}/coverage/code-coverage-results.md
         with:
-          recreate: true
-          path: code-coverage-results.md
-          number: ${{ steps.get_pr_number.outputs.pr_number }}
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- coverage-summary -->';
+            const { owner, repo } = context.repo;
+            const run = context.payload.workflow_run;
+
+            // Look the pull request up by its head branch, which also works for forks, where
+            // workflow_run lists no pull requests. Only an open pull request whose head is still
+            // the commit CI ran on gets the comment, so a run that finishes late never replaces
+            // the summary of a newer push.
+            const { data: pulls } = await github.rest.pulls.list({
+              owner,
+              repo,
+              state: 'open',
+              head: `${run.head_repository.owner.login}:${run.head_branch}`,
+            });
+            const issue_number = pulls.find((pr) => pr.head.sha === run.head_sha)?.number;
+            if (!issue_number) {
+              core.info(`No open pull request has ${run.head_sha} as its head, nothing to comment on.`);
+              return;
+            }
+
+            // The file comes from the pull request's run, so it is untrusted text. It only becomes
+            // the comment body, and the length cap keeps it within GitHub's comment size limit.
+            const summary = fs.readFileSync(process.env.SUMMARY_FILE, 'utf8').slice(0, 60000);
+            const body = `${marker}\n${summary}`;
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+            });
+            const existing = comments.find((c) => c.user.type === 'Bot' && c.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
