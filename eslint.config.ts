@@ -12,6 +12,10 @@ const config: ReturnType<typeof collanaEslintConfig.configs.flat.getConfig> = [
     files: ["src/lib/*.spec.ts"],
     rules: { "max-lines": ["off"] },
   },
+  // The package supports Node 18 (engines), and Array#toReversed() needs Node 20 (ES2023).
+  {
+    rules: { "unicorn/no-array-reverse": ["off"] },
+  },
   // Kept identical to the release playbook template it comes from, so updates can be copied over as they are.
   {
     ignores: ["scripts/generate-dependabot-changeset.mjs"],
