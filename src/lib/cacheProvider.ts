@@ -5,8 +5,8 @@ import { isNullOrWhitespace } from "./string";
  * Methods to help caching data of any type.
  * Data is put in containers and may be identified by a string key.
  * Data can be saved, retrieved and reset.
- * Based on Neolution.Abstractions.Caching.CacheProvider<TEnum>
- * Ref: https://github.com/neolution-ch/Neolution.Abstractions/blob/main/Neolution.Abstractions/Caching/CacheProvider.cs
+ * Based on Csag.Abstractions.Caching.CacheProvider<TEnum>
+ * Ref: https://github.com/collana-solutions/Csag.Abstractions/blob/main/Csag.Abstractions/Caching/CacheProvider.cs
  */
 export class CacheProvider<TEnum> {
   /**
