@@ -1,5 +1,11 @@
 # @collana-solutions/javascript-utils
 
+## 2.6.2
+
+### Patch Changes
+
+- [#101](https://github.com/collana-solutions/javascript-utils/pull/101) [`2c13852`](https://github.com/collana-solutions/javascript-utils/commit/2c138523cf28310ba40b196d9b636983a577ed7d) Thanks [@neotrow](https://github.com/neotrow)! - Internal cleanups without behavior changes: `parseBool` uses `replaceAll` with the same pattern, and `trimEnd` keeps its search index inside the loop. The doc comment of `CacheProvider` links to `Csag.Abstractions`.
+
 ## 2.6.1
 
 ### Patch Changes
