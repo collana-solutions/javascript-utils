@@ -166,6 +166,8 @@
 
 - `getStartOfDay`, `getEndOfDay` and `getLastDayOfYear` date utility functions
 
+- added `validateUrl` utility function
+
 ## [1.1.0] - 2024-10-17
 
 - export `boolean` utilities
